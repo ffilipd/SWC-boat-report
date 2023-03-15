@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      table, td, th {
+        border: 1px solid;
+        border-collapse: collapse;
+        padding: 0px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Do not reply!</h3>
+    <h4><?= props.header ?></h4>
+    <hr>
+    <h4><?= props.subHeader ?></h4>
+    <table id="table">
+      <thead>
+          <th>Damage Type</th>
+          <th>Description</th>
+      </thead>
+      <? var bg = props.bgColor2; ?>                                          <!-- FIRST BACKGROUND COLOR -->
+      <? for (var i = 0; i < props.damages.length; i++) { ?>                  <!-- TAKE ONE DAMAGE A TIME -->
+        <? if (props.name != props.damages[i][0]) { ?>                        <!-- IF BOAT NAME HAS CHANGED FROM LAST ITERATION -->
+          <? bg = bg == props.bgColor2 ? props.bgColor1 : props.bgColor2?>    <!-- CHANGE BACKGROUD COLOR -->
+          <tr><th colspan="2" bgcolor=<?= bg ?>><?= props.damages[i][0] ?></th></tr>
+        <? } ?> 
+        <tr bgcolor=<?= bg ?>>
+          <td><?= props.damages[i][1] ?></td>
+          <td><?= props.damages[i][2] ?></td>
+        </tr>
+        <? props.name = props.damages[i][0] ?>          <!-- REMEMBER WHICH BOAT THIS DAMAGE BELONGS TO -->
+        <? lastBg = bg ?>                               <!-- REMEMBER WHICH COLOR WAS USED FOR THIS DAMAGE  -->
+      <? } ?>
+    </table>
+    <p>Here is a <a href="<?= props.url ?>">link</a> to the maintenance task lists</p>
+    <h4><?= props.footer ?></h4>
+    <hr>
+    <p>
+      <?= props.signature ?>
+    </p>
+  </body>
+</html>
