@@ -3,6 +3,7 @@
  * automatically send out notifications and reminders about equipment   *
  * damage                                                               *
  * For support, contact Filip Dahlskog –  filipdahlskog@gmail.com       *
+ * Backup => https://github.com/ffilipd/SWC-boat-report/tree/main       *
  ************************************************************************
 */
 
@@ -16,22 +17,8 @@ function weeklyDamageCheck() {
     var mailList = getMailList(spreadSheet);                                                  // GET EMAIL ADDRESSES
     remindCrewLeaders(damagedBoats, mailList, spreadSheet, event);                            // SEND REMINDER EMAIL TO CREWLEADERS
   
-    sendCopies(mailList, allDamagesList, spreadSheet, event);                                        // SEND MAIL COPIES
+    sendCopies(mailList, allDamagesList, spreadSheet, event);                                 // SEND MAIL COPIES
   }
-}
-
-/******** GET MESSAGE TEMPLATE FROM SHEET ********/
-function getMessageTemplate(spreadSheet, event) {
-  var messageSheet = getSheets(event)[0];
-  var messageArray = spreadSheet.getSheetByName(messageSheet).getRange(2,1,6,2).getValues(); // GET THE MESSAGE TEMPLATE FROM SPREADSHEET
-  var messageObject = {
-    subject:messageArray[0][1],
-    header:messageArray[1][1],
-    subHeader:messageArray[2][1],
-    footer:messageArray[3][1],
-    signature:messageArray[4][1],
-  }
-  return messageObject;
 }
 
 
@@ -39,19 +26,32 @@ function getMessageTemplate(spreadSheet, event) {
 function majorDamageCheck() {
   var event = 'majorDamage';                                                                // NAME OF EVENT
 
-  var [taskSheets,spreadSheet] = getSheets('tasks');                                           // GET MAINTENANCE TASK LIST
+  var [taskSheets,spreadSheet] = getSheets('tasks');                                        // GET MAINTENANCE TASK LIST
   var [damagedBoats, allDamagesList] = getDamagedBoats(taskSheets, spreadSheet, event);     // GET UNFIXED DAMAGES BY EVENT
   
-  if (damagedBoats.length > 0) {                                            // IF UNFIXED DAMAGES EXISTS
-    var mailList = getMailList(spreadSheet);                                // GET EMAIL ADDRESSES
+  if (damagedBoats.length > 0) {                                                            // IF UNFIXED DAMAGES EXISTS
+    var mailList = getMailList(spreadSheet);                                                // GET EMAIL ADDRESSES
 
-    remindCrewLeaders(damagedBoats, mailList, spreadSheet, event);                       // SEND EMAIL TO CREWLEADER ABOUT MAJOR DAMAGE
-    damagedBoats.forEach(damage => damage.damages[3]);                      // MARK MAJOR DAMAGE AS "NOTIFIED" IN MAINT. TASK LIST
-    sendCopies(mailList, allDamagesList, spreadSheet, event);                                   // SEND MAIL COPIES
+    remindCrewLeaders(damagedBoats, mailList, spreadSheet, event);                          // SEND EMAIL TO CREWLEADER ABOUT MAJOR DAMAGE
+    damagedBoats.forEach(damage => damage.damages[3]);                                      // MARK MAJOR DAMAGE AS "NOTIFIED" IN MAINT. TASK LIST
+    sendCopies(mailList, allDamagesList, spreadSheet, event);                               // SEND MAIL COPIES
   }
 }
 
 
+/******** GET MESSAGE TEMPLATE FROM SHEET ********/
+function getMessageTemplate(spreadSheet, event) {
+  var messageSheet = getSheets(event)[0];                                                     // GET THE MESSAGE TEMPLATE SHEET
+  var messageArray = spreadSheet.getSheetByName(messageSheet).getRange(2,1,6,2).getValues();  // GET THE VALUES FOR THE MESSAGE TEMPLATE
+  var messageObject = {                                                                       // ASSIGN THE VALUES TO AN OBJECT
+    subject:messageArray[0][1],
+    header:messageArray[1][1],
+    subHeader:messageArray[2][1],
+    footer:messageArray[3][1],
+    signature:messageArray[4][1],
+  }
+  return messageObject;                                                                       // RETURN THE OBJECT WITH MESSAGE PROPERTIES
+}
 
 
 /******* GET NAME SPECIFIC SHEETS *******/
@@ -143,7 +143,7 @@ function getDamagedBoats(taskSheets, spreadSheet, event) {
     if (damagedBoatObj.damages.length > 0) damagedBoats.push(damagedBoatObj); // IF DAMAGES WERE FOUND AND APPENDED
   }
 
-  return [damagedBoats, allDamagesList]                             // RETURN THE LISTS
+  return [damagedBoats, allDamagesList]                                       // RETURN THE LISTS
 }
 
 
@@ -151,7 +151,7 @@ function getDamagedBoats(taskSheets, spreadSheet, event) {
 
 /******* SEND EMAIL TO CREW LEADERS ABOUT DAMAGES *******/
 function remindCrewLeaders(damagedBoats, mailList, spreadSheet, event) {
-  var messageTemplate = getMessageTemplate(spreadSheet, event);
+  var messageTemplate = getMessageTemplate(spreadSheet, event);       // GET PROPERTIES FOR MESSAGE
 
   for (let i = 0; i < damagedBoats.length; i++) {                     // TAKE ONE DAMAGE A TIME
     var damagedBoat = damagedBoats[i];                                // GET THE CURRENT DAMAGED BOAT
@@ -169,19 +169,19 @@ function remindCrewLeaders(damagedBoats, mailList, spreadSheet, event) {
       '.*' + damagedBoatNumber + 
       '$', 'i'
       );
-    var boatNameOfCrewLeaderInfo = 0;                                 // BOAT NAME IS IN CELL[0]
-    var crewleaderInfo = mailList.filter(leader =>                    // USE THE REGEX STRING TO FILTER OUT THE CREWLEADER FOR THIS BOAT
-    leader[boatNameOfCrewLeaderInfo].match(regexSearchString))[0];    // Array.filter() RETURNS AN ARRAY, SO PICK INDEX 0
+    var boatNameOfCrewLeaderInfo = 0;                                               // BOAT NAME IS IN CELL[0]
+    var crewleaderInfo = mailList.filter(leader =>                                  // USE THE REGEX STRING TO FILTER OUT THE CREWLEADER FOR THIS BOAT
+    leader[boatNameOfCrewLeaderInfo].match(regexSearchString))[0];                  // Array.filter() RETURNS AN ARRAY, SO PICK INDEX 0
 
-    var crewLeaderEmailIndex = 1;                                       // INDEX FOR EMAIL ADDRESS
-    var crewLeaderEmailAddress = crewleaderInfo[crewLeaderEmailIndex];  // TAKE THE EMAIL ADDRESS OF CREWLEADER
+    var crewLeaderEmailIndex = 1;                                                   // INDEX FOR EMAIL ADDRESS
+    var crewLeaderEmailAddress = crewleaderInfo[crewLeaderEmailIndex];              // TAKE THE EMAIL ADDRESS OF CREWLEADER
 
     var mailTemplate = 'mailbase';
-    var templ = HtmlService.createTemplateFromFile(mailTemplate);       // CREATE A TEMPLATE
-    var spreadSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl();
-    var taskListUrl = spreadSheetUrl + '#gid=' + damagedBoat.id;
+    var templ = HtmlService.createTemplateFromFile(mailTemplate);                   // CREATE THE MAIL TEMPLATETE
+    var spreadSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl();            // GET URL FOR THE ACTIVE SPREADSHEET
+    var taskListUrl = spreadSheetUrl + '#gid=' + damagedBoat.id;                    // CONCATENATE AN URL FOR THE SPECIFIC TASK SHEET
 
-    var messageProperties = {                                                        // CREATE AN OBJECT FOR THE TEMPLATE TO USE
+    var messageProperties = {                                                       // CREATE AN OBJECT WITH THE PROPERTIES FOR THE MESSAGE
       header: messageTemplate.header,
       subHeader: messageTemplate.subHeader,
       footer: messageTemplate.footer,
@@ -191,7 +191,7 @@ function remindCrewLeaders(damagedBoats, mailList, spreadSheet, event) {
       url: taskListUrl
     }
 
-    templ.props = messageProperties;                                            // GIVE THE PROPERTIES OBJECT TO THE TEMPLATE
+    templ.props = messageProperties;                                            // GIVE THE PROPERTIES TO THE EMAIL TEMPLATE
     var message = templ.evaluate().getContent();                                // CREATE A MESSAGE FROM THE TEMPLATE
 
     if (crewLeaderEmailAddress.length > 1) {                                    // IF THE CREWLEADER EMAIL ADDRESS EXISTS
@@ -209,13 +209,13 @@ function remindCrewLeaders(damagedBoats, mailList, spreadSheet, event) {
 
 /******* SEND COPIES TO MAIL ADRESSES MARKED WITH 'COPY' *******/
 function sendCopies(mailList, damages, spreadSheet, event) {
-  var eventType = event != 'weekly' ? 'MAJOR' : 'Weekly';
-  var type = 'copy'
-  var copyMailList = mailList.filter(name => name[0] == type)         // FILTER OUT EMAIL ADDRESSES MARKED 'copy' IN THE LIST
-  var templ = HtmlService.createTemplateFromFile('copymailbase');     // CREATE A TEMPLATE FOR THE MESSAGE
-  var spreadSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl();
-  var messageTemplate = getMessageTemplate(spreadSheet, type);
-  var messageProperties = {                                           // CREATE AN OBJECT WITH PROPERTIES FOR THE TEMPLATE
+  var eventType = event != 'weekly' ? 'MAJOR' : 'Weekly';                   // CONDITIONALLY SET THE SUBJECT OF THE MAIL COPY
+  var type = 'copy'                                                         // WE NEED THE TYPE FOR DECIDING WHICH MESSAGE TEMPLATE WE USE
+  var copyMailList = mailList.filter(name => name[0] == type)               // FILTER OUT EMAIL ADDRESSES MARKED 'copy' IN THE LIST
+  var templ = HtmlService.createTemplateFromFile('copymailbase');           // CREATE A TEMPLATE FOR THE EMAIL
+  var spreadSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl();      // GET THE URL FOR THE ACTIVE SPREADSHEET
+  var messageTemplate = getMessageTemplate(spreadSheet, type);              // GET THE MESSAGE TEMPLATE
+  var messageProperties = {                                                 // CREATE AN OBJECT WITH PROPERTIES FOR THE EMAIL TEMPLATE
     header: messageTemplate.header,
     subHeader: messageTemplate.subHeader,
     footer: messageTemplate.footer,
@@ -226,7 +226,7 @@ function sendCopies(mailList, damages, spreadSheet, event) {
     bgColor2: '#fff'                                                // COLOR 2 FOR ALTERNATING BACKGROUD COLOR IN TABLE
   }
 
-  templ.props = messageProperties;                                                // GIVE THE OBJECT TO THE TEMPLATE
+  templ.props = messageProperties;                                  // GIVE THE PROPERTIES TO THE EMAIL TEMPLATE
   var message = templ.evaluate().getContent();                      // CREATE A MESSAGE FROM THE TEMPLATE
 
   copyMailList.forEach(copy =>{                                     // FOR EACH EMAIL ADDRESS MARKED 'copy'
